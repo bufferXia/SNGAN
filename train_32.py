@@ -19,7 +19,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--lr', type=float, default=2e-4)
+    parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--loss', type=str, default='hinge')
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
 
@@ -36,7 +36,7 @@ def main():
 
     Z_dim = 128
     # number of updates to discriminator for every update to generator
-    disc_iters = 3
+    disc_iters = 1
 
     discriminator = Discriminator32(n_class=args.n_class).to(device)
     generator = Generator32(Z_dim,n_class=args.n_class).to(device)
@@ -73,6 +73,8 @@ def main():
             optim_disc.zero_grad()
             optim_gen.zero_grad()
 
+            loss1 = -discriminator(real_image,label).mean()
+            loss2 = discriminator(generator(z,label),label).mean()
             disc_loss = -discriminator(real_image,label).mean() + discriminator(generator(z,label),label).mean()
 
             # if args.loss == 'hinge':
@@ -102,7 +104,6 @@ def main():
             scheduler_g.step()
 
         if (i + 1) % 100 == 0:
-
             generator.train(False)
             z = torch.randn(args.n_class, Z_dim).to(device)
             input_class = torch.arange(args.n_class).long().to(device)
