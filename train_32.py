@@ -36,7 +36,7 @@ def main():
 
     Z_dim = 128
     # number of updates to discriminator for every update to generator
-    disc_iters = 1
+    disc_iters = 3
 
     discriminator = Discriminator32(n_class=args.n_class).to(device)
     generator = Generator32(Z_dim,n_class=args.n_class).to(device)
@@ -45,7 +45,7 @@ def main():
     # optimize these using sgd. We only let the optimizer operate on parameters that _do_ require gradients
     # TODO: replace Parameters with buffers, which aren't returned from .parameters() method.
     optim_disc = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(0.0, 0.9))
-    optim_gen = optim.Adam(generator.parameters(), lr=args.lr, betas=(0.0, 0.9))
+    optim_gen = optim.Adam(generator.parameters(), lr=8*args.lr, betas=(0.0, 0.9))
 
     # use an exponentially decaying learning rate
     scheduler_d = optim.lr_scheduler.ExponentialLR(optim_disc, gamma=0.90)
@@ -73,8 +73,8 @@ def main():
             optim_disc.zero_grad()
             optim_gen.zero_grad()
 
-            loss1 = -discriminator(real_image,label).mean()
-            loss2 = discriminator(generator(z,label),label).mean()
+            # loss1 = -discriminator(real_image,label).mean()
+            # loss2 = discriminator(generator(z,label),label).mean()
             disc_loss = -discriminator(real_image,label).mean() + discriminator(generator(z,label),label).mean()
 
             # if args.loss == 'hinge':
