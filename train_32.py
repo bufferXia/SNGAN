@@ -8,24 +8,23 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms,utils
 from torch.utils.data import DataLoader
-from gen_models_pytorch.resnet import Generator
-from dis_models_pytorch.snresnet import Discriminator
+from gen_models_pytorch.gen_res_32 import Generator32
+from dis_models_pytorch.dis_res_32 import Discriminator32
 import torchvision
 
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 def main():
 
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=2)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=2e-4)
     parser.add_argument('--loss', type=str, default='hinge')
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
 
     parser.add_argument('--model', type=str, default='resnet')
-    parser.add_argument('--path', type=str, default=r'H:\Dataset\flowers17\train')
+    parser.add_argument('--path', type=str, default=r"H:\Dataset") #flower_path = r'H:\Dataset\flowers17\train'
     # parser.add_argument('--batch', type=int, default=8)
     parser.add_argument('--iter', type=int, default=200000)
     parser.add_argument('--n_class', type=int, default=10)
@@ -39,8 +38,8 @@ def main():
     # number of updates to discriminator for every update to generator
     disc_iters = 3
 
-    discriminator = Discriminator(n_class=args.n_class).to(device)
-    generator = Generator(Z_dim,n_class=args.n_class).to(device)
+    discriminator = Discriminator32(n_class=args.n_class).to(device)
+    generator = Generator32(Z_dim,n_class=args.n_class).to(device)
 
     # because the spectral normalization module creates parameters that don't require gradients (u and v), we don't want to
     # optimize these using sgd. We only let the optimizer operate on parameters that _do_ require gradients
@@ -59,13 +58,14 @@ def main():
         # b_size = real_image.size(0)
         # real_image = real_image.to(device)
         # label = label.to(device)
-
         # update discriminator
+
         requires_grad(generator, False)
         requires_grad(discriminator, True)
         b_size = 0
         for _ in range(disc_iters):
             real_image, label = next(dataset)
+            real_image = real_image.repeat(1, 3, 1, 1)
             real_image = real_image.to(device)
             b_size = real_image.size(0)
             z = torch.randn(b_size, Z_dim).to(device)
@@ -92,12 +92,12 @@ def main():
         requires_grad(generator, True)
         requires_grad(discriminator,False )
 
-        z = torch.randn(args.batch_size, Z_dim).to(device)
+        z = torch.randn(b_size, Z_dim).to(device)
         gen_loss = -discriminator(generator(z,label),label).mean()
         gen_loss.backward()
         optim_gen.step()
 
-        if i%10000 == 0:
+        if i%5000 == 0:
             scheduler_d.step()
             scheduler_g.step()
 
@@ -113,10 +113,10 @@ def main():
                 f'sample/{str(i + 1).zfill(7)}.png',
                 nrow=args.n_class,
                 normalize=True,
-                range=(-1, 1),
+                range=(0, 1),
             )
 
-        if (i + 1) % 5000 == 0:
+        if (i + 1) % 2000 == 0:
             no = str(i + 1).zfill(7)
             torch.save(generator.state_dict(), f'checkpoint/generator_{no}.pt')
             torch.save(discriminator.state_dict(), f'checkpoint/discriminator_{no}.pt')
@@ -130,7 +130,8 @@ def main():
 
 def sample_data(path, batch_size):
     # dataset = datasets.ImageFolder(path, transform=transform)
-    dataset = torchvision.datasets.STL10(path,transform=transform)
+    # dataset = torchvision.datasets.STL10(path,transform=transform)
+    dataset = torchvision.datasets.FashionMNIST(path,transform=transform)
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=4)
     loader = iter(loader)
 
@@ -147,7 +148,7 @@ def sample_data(path, batch_size):
 
 transform = transforms.Compose(
     [
-        transforms.Resize((128,128)),
+        transforms.Resize((32,32)),
         # transforms.CenterCrop(128),
         # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
@@ -162,10 +163,8 @@ def requires_grad(model, flag=True):
 
 
 if __name__ == '__main__':
-    with torch.cuda.device(1):
-
+    with torch.cuda.device(0):
         main()
-
 
 
 

@@ -4,10 +4,10 @@ from torch.nn import functional as F
 import torch.nn as nn
 
 
-class Generator(nn.Module):
+class Generator32(nn.Module):
 
     def __init__(self, code_dim=128, n_class=17):
-        super(Generator,self).__init__()
+        super(Generator32,self).__init__()
 
         self.lin_code = nn.Linear(code_dim, 256*4*4)
         self.conv = nn.ModuleList([
