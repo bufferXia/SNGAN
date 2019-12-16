@@ -10,6 +10,7 @@ from torchvision import datasets, transforms,utils
 from torch.utils.data import DataLoader
 from gen_models_pytorch.resnet import Generator
 from dis_models_pytorch.snresnet import Discriminator
+import torchvision
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
@@ -18,7 +19,7 @@ def main():
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--lr', type=float, default=2e-4)
     parser.add_argument('--loss', type=str, default='hinge')
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
@@ -27,7 +28,7 @@ def main():
     parser.add_argument('--path', type=str, default=r'H:\Dataset\flowers17\train')
     # parser.add_argument('--batch', type=int, default=8)
     parser.add_argument('--iter', type=int, default=200000)
-    parser.add_argument('--n_class', type=int, default=17)
+    parser.add_argument('--n_class', type=int, default=10)
 
 
     args = parser.parse_args()
@@ -127,7 +128,8 @@ def main():
 
 
 def sample_data(path, batch_size):
-    dataset = datasets.ImageFolder(path, transform=transform)
+    # dataset = datasets.ImageFolder(path, transform=transform)
+    dataset = torchvision.datasets.STL10(path,transform=transform)
     loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=4)
     loader = iter(loader)
 
