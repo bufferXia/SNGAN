@@ -34,13 +34,13 @@ class Discriminator32(nn.Module):
         out = out.view(out.size(0), out.size(1), -1)
         out = out.sum(2)
 
-        output = self.linear(out)
+        output_liner = self.linear(out)
 
         if class_id is not None:
             #  相当于不加 softmax 的 classifier, 直接提取 classifier 在 label 对应的维度的输出
-            class_out = torch.sum(self.embed(class_id) * output, dim=1, keepdim=True)
+            class_out = torch.sum(self.embed(class_id) * out, dim=1, keepdim=True)
             # 把两部分加起来作为 discriminator 的 output
-            output = output + class_out
+            output = output_liner + class_out
 
         # embed = self.embed(class_id)
         # prod = (out * embed).sum(1)
