@@ -97,8 +97,9 @@ def main():
         gen_loss.backward()
         optim_gen.step()
 
-        scheduler_d.step()
-        scheduler_g.step()
+        if i%10000 == 0:
+            scheduler_d.step()
+            scheduler_g.step()
 
         if (i + 1) % 100 == 0:
 
